@@ -1,0 +1,85 @@
+
+R version 4.3.0 (2023-04-21 ucrt) -- "Already Tomorrow"
+Copyright (C) 2023 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+[Previously saved workspace restored]
+
+> #Import packages
+> library(raster)
+Loading required package: sp
+> CIATData <- readRDS("C:/Users/Wisdom/CIAT/Database.rds")
+> names(CIATData)
+[1] "climate"  "conflict" "socioeco"
+> climate <- CIATData[[1]]
+> conflict <- CIATData[[2]]
+> socioeco<- CIATData[[3]]
+> names(climate)
+[1] "CDD"   "NDWS"  "NTx35" "NWLD"  "P95"   "TR"   
+> names(conflict)
+[1] "ACTOR1_RICHNESS_rfsi"  "ACTOR2_RICHNESS_rfsi"  "EVENTS_rfsi"          
+[4] "FATALITIES_rfsi"       "SUBTYPE_RICHNESS_rfsi"
+> names(socioeco)
+[1] "KEN_rwi"             "acess"               "medn_underweight"   
+[4] "medn_difference_edu" "ub_npp"              "medn_piped_water"   
+> 
+> #With the data loaded, we load two datasets of interest for this case i.e.,
+> #Consecutive dry days (precipitation < 1 mm/day) as CDD, and 
+> #Total number of conflict events as Events
+> CDD <- climate[[1]]
+> Events <- conflict[[3]]
+> 
+> #Check if the correct data has been loaded
+> names(CDD)
+ [1] "X1981" "X1982" "X1983" "X1984" "X1985" "X1986" "X1987" "X1988" "X1989"
+[10] "X1990" "X1991" "X1992" "X1993" "X1994" "X1995" "X1996" "X1997" "X1998"
+[19] "X1999" "X2000" "X2001" "X2002" "X2003" "X2004" "X2005" "X2006" "X2007"
+[28] "X2008" "X2009" "X2010" "X2011" "X2012" "X2013" "X2014" "X2015" "X2016"
+[37] "X2017" "X2018" "X2019" "X2020" "X2021"
+> names(Events)
+[1] "EVENTS_rfsi"
+> 
+> #REsample the Events based on CDD
+> Events <- resample(Events, CDD, method="bilinear")
+ 
+> #With the data resampled, we mask the rasters to get only overlaying areas
+> Events_m <- mask(Events, CDD)
+> CDD_m <- mask(CDD, Events)
+> 
+> #With the data masked, now we can plot to see the data
+> plot(Events_m)
+> plot(CDD_m)
+> plot(CDD_m)
+> plot(Events_m)
+> plot(CDD_m)
+> 
+> #Now we convert the data to dataframe for use in correlation analysis
+> overlay <- stack(Events_m, CDD_m)
+> overlay2 <- data.frame(na.omit(values(overlay)))
+> names(overlay2) <- c("Events", "CDD")
+> cor.test(overlay[,1], overlay[,2])
+
+        Pearson's product-moment correlation
+
+data:  overlay[, 1] and overlay[, 2]
+t = 52.607, df = 162, p-value < 2.2e-16
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ 0.9619991 0.9793330
+sample estimates:
+     cor 
+0.971957 
